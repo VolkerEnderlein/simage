@@ -50,8 +50,8 @@ set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
   pkg_check_modules(PC_SNDFILE QUIET sndfile)
+  message (STATUS "pkgconfig: libdir: ${PC_SNDFILE_LIBDIR} incdir: ${PC_SNDFILE_INCLUDEDIR}")
 endif()
-
 find_path(SNDFILE_INCLUDE_DIR
   NAMES sndfile.h
   HINTS ${PC_SNDFILE_INCLUDEDIR} ${SNDFILE_ROOT}
