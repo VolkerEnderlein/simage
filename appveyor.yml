@@ -132,7 +132,7 @@ install:
       if [ "$COMPILER_ID" = "clang" ]; then brew install jpeg giflib libtiff libogg libvorbis libsndfile zlib; fi
       ls /usr/lib/x86_64-linux-gnu/libsnd*
       echo "und nun der header"
-      find / -name sndfile*
+      find /usr -name sndfile*
   - cmd: |
       cd %APPVEYOR_BUILD_FOLDER%
       set PATH=%APPVEYOR_BUILD_FOLDER%\downloads\doxygen-1.8.14;%PATH%
