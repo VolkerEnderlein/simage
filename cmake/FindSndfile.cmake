@@ -45,15 +45,18 @@ else()
   set(_SNDFILE_SEARCH_OPTS)
 endif()
 
+set(CMAKE_FIND_DEBUG_MODE TRUE)
 # Use pkg-config if available
 find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
   pkg_check_modules(PC_SNDFILE QUIET sndfile)
 endif()
 
-find_path(SNDFILE_INCLUDE_DIR NAMES sndfile.h
-  HINTS "${PC_SNDFILE_INCLUDEDIR};${SNDFILE_ROOT}"
-  PATH_SUFFIXES include include/sndfile ${_SNDFILE_SEARCH_OPTS}
+find_path(SNDFILE_INCLUDE_DIR
+  NAMES sndfile.h
+  HINTS ${PC_SNDFILE_INCLUDEDIR} ${SNDFILE_ROOT}
+  PATH_SUFFIXES include include/sndfile
+  ${_SNDFILE_SEARCH_OPTS}
 )
 
 set(sndfile_names ${SNDFILE_NAMES} sndfile sndfile-1 libsndfile libsndfile-1)
@@ -64,13 +67,13 @@ endforeach()
 if(NOT SNDFILE_LIBRARY)
   find_library(SNDFILE_LIBRARY_RELEASE
     NAMES ${sndfile_names}
-    HINTS "${PC_SNDFILE_LIBDIR};${SNDFILE_ROOT}"
+    HINTS ${PC_SNDFILE_LIBDIR} ${SNDFILE_ROOT}
     PATH_SUFFIXES lib
     ${_SNDFILE_SEARCH_OPTS}
   )
   find_library(SNDFILE_LIBRARY_DEBUG
     NAMES ${sndfile_names_debug}
-    HINTS "${PC_SNDFILE_LIBDIR};${SNDFILE_ROOT}"
+    HINTS ${PC_SNDFILE_LIBDIR} ${SNDFILE_ROOT}
     PATH_SUFFIXES lib
     ${_SNDFILE_SEARCH_OPTS}
   )
@@ -78,6 +81,7 @@ if(NOT SNDFILE_LIBRARY)
   select_library_configurations(SNDFILE)
   mark_as_advanced(SNDFILE_LIBRARY_RELEASE SNDFILE_LIBRARY_DEBUG)
 endif()
+set(CMAKE_FIND_DEBUG_MODE FALSE)
 unset(sndfile_names)
 unset(sndfile_names_debug)
 
