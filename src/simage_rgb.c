@@ -39,6 +39,10 @@
 
 static int rgberror = ERR_NO_ERROR;
 
+/* Length of simage_rgb_opendata::tmpbuf. The SGI RGB header's component count
+   indexes that array, so the two must not drift apart. */
+#define SIMAGE_RGB_MAX_COMPONENTS 4
+
 typedef struct {
   FILE * in;
   int w;
@@ -49,7 +53,7 @@ typedef struct {
   int * rowlen;
   unsigned char * rlebuf;
   int rlebuflen;
-  unsigned char * tmpbuf[4];
+  unsigned char * tmpbuf[SIMAGE_RGB_MAX_COMPONENTS];
 } simage_rgb_opendata;
 
 unsigned char *
@@ -267,6 +271,16 @@ simage_rgb_open(const char * filename,
     return NULL;
   }
 
+  /* size[2] is the component count and is used to index od->tmpbuf[], which has a
+     fixed length. It is read from the file and reaches 65535, so any value above
+     the array length wrote live malloc() pointers past the end of the struct, and
+     simage_rgb_close() then free()d across the same out-of-bounds range. */
+  if (size[2] < 1 || size[2] > SIMAGE_RGB_MAX_COMPONENTS) {
+    rgberror = ERR_READ;
+    fclose(in);
+    return NULL;
+  }
+
   od = (simage_rgb_opendata*) malloc(sizeof(simage_rgb_opendata));
   memset(od, 0, sizeof(simage_rgb_opendata));
   od->in = in;
@@ -332,10 +346,26 @@ read_rgb_row_component(simage_rgb_opendata * od, int y, int c)
       return 0;
     }
     rowlen = od->rowlen[y+c*od->h];
+    /* rowlen is signed and comes straight from the file's row-length table. The
+       test below is an upper bound only, so a negative value skipped the regrow
+       and was then handed to fread(), whose size_t parameter turns -1 into
+       SIZE_MAX. Zero is rejected too: the decoder reads *src before any bound
+       check, which on an empty buffer is an uninitialised read. */
+    if (rowlen < 1) {
+      rgberror = ERR_READ;
+      return 0;
+    }
     if (rowlen > od->rlebuflen) {
       free(od->rlebuf);
       od->rlebuflen = rowlen;
       od->rlebuf = (unsigned char*) malloc(od->rlebuflen);
+      if (!od->rlebuf) {
+        /* od->rlebuf was just freed; keeping the old length would describe a
+           buffer that no longer exists. */
+        od->rlebuflen = 0;
+        rgberror = ERR_READ;
+        return 0;
+      }
     }
     if (fread(od->rlebuf, 1, rowlen, od->in) != rowlen) {
       rgberror = ERR_READ;
