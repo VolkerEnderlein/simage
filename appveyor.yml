@@ -1,4 +1,4 @@
-version: 1.8.4-{branch}-ci-{build}
+version: 1.8.5-{branch}-ci-{build}
 
 branches:
   only:
